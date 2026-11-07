@@ -7,6 +7,11 @@ A privacy-first autonomous **SecOps Office Agent** built for the
 **Tencent Cloud AI CAN DO IT Hackathon Indonesia 2026 — Challenge B: The Office Agent**.
 Created by **Muhammad Rafif Rianto — PIXZ.DEV**.
 
+- **Live demo:** <https://pyzex-guard.vercel.app> (runs in `DEMO_MODE` with the
+  clearly-labeled deterministic fallback; add a provider API key in the
+  environment to switch the same deployment to live GLM triage)
+- **Repository:** <https://github.com/pixzdev/pyzex-guard>
+
 ---
 
 ## 1. Pengantar (Bahasa Indonesia)
