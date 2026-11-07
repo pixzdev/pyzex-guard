@@ -239,6 +239,8 @@ describe('routing', () => {
     const response = await fetch(baseUrl);
     assert.equal(response.status, 200);
     const html = await response.text();
-    assert.ok(html.includes('PYZEX GUARD'));
+    assert.ok(html.includes('PYZEX'));
+    assert.ok(html.includes('GUARD'));
+    assert.ok(html.includes('Privacy-First SecOps Office Agent'));
   });
 });

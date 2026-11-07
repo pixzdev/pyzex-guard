@@ -20,15 +20,21 @@
   };
 
   const WORKFLOW_STAGES = [
-    ['INGEST', 'Ingest'],
-    ['PYSCAN', 'PYSCAN'],
-    ['LOCAL_SANITIZATION', 'Sanitize'],
-    ['GLM_SECURITY_TRIAGE', 'GLM triage'],
-    ['PYGUARD_POLICY_VALIDATION', 'PYGUARD'],
-    ['REMEDIATION_DRAFT', 'Remediation'],
-    ['HUMAN_APPROVAL', 'Approval'],
-    ['AUDIT_RECORD', 'Audit'],
+    ['INGEST', 'Ingest', 'inbox'],
+    ['PYSCAN', 'PYSCAN', 'scan-search'],
+    ['LOCAL_SANITIZATION', 'Sanitize', 'eye-off'],
+    ['GLM_SECURITY_TRIAGE', 'GLM triage', 'bot'],
+    ['PYGUARD_POLICY_VALIDATION', 'PYGUARD', 'shield-check'],
+    ['REMEDIATION_DRAFT', 'Remediation', 'wrench'],
+    ['HUMAN_APPROVAL', 'Approval', 'user-check'],
+    ['AUDIT_RECORD', 'Audit', 'database'],
   ];
+
+  const SOURCE_TYPE_META = {
+    snippet: { icon: 'code-2', label: 'Snippet' },
+    git_diff: { icon: 'git-pull-request', label: 'Git diff' },
+    config: { icon: 'settings-2', label: 'Config' },
+  };
 
   const SEVERITY_STYLE = {
     critical: { text: 'text-red-300', border: 'border-crimson/50', bg: 'bg-crimson/10', dot: 'bg-red-400', raw: '#EF4444' },
@@ -89,11 +95,11 @@
     if (ai.configured) {
       dot.className = 'stage-dot size-1.5 rounded-full bg-emerald inline-block';
       label.textContent = `AI · ${ai.provider}: ${ai.model || 'configured'}`;
-      chipAi.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-emerald/30 bg-emerald/10 text-emerald text-[11px]';
+      chipAi.className = 'inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full border border-emerald/30 bg-emerald/10 text-emerald text-[11.5px] font-medium whitespace-nowrap';
     } else {
       dot.className = 'stage-dot size-1.5 rounded-full bg-amber inline-block';
       label.textContent = `AI · ${ai.provider} · demo/mock`;
-      chipAi.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-amber/40 bg-amber/10 text-amber text-[11px]';
+      chipAi.className = 'inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full border border-amber/40 bg-amber/10 text-amber text-[11.5px] font-medium whitespace-nowrap';
     }
 
     const privacy = health.privacy;
@@ -101,9 +107,9 @@
     const privacyLabel = chipPrivacy.querySelector('[data-chip-label]');
     privacyLabel.textContent = `Privacy · ${privacy.effective_mode}`;
     if (privacy.effective_mode === 'show') {
-      chipPrivacy.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-crimson/50 bg-crimson/10 text-red-300 text-[11px]';
+      chipPrivacy.className = 'inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full border border-crimson/50 bg-crimson/10 text-red-300 text-[11.5px] font-medium whitespace-nowrap';
     } else {
-      chipPrivacy.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-emerald/30 bg-emerald/10 text-emerald text-[11px]';
+      chipPrivacy.className = 'inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full border border-emerald/30 bg-emerald/10 text-emerald text-[11.5px] font-medium whitespace-nowrap';
     }
 
     const showBanner = $('show-banner');
@@ -124,13 +130,13 @@
     const dbLabel = chipDb.querySelector('[data-chip-label]');
     if (health.database.active) {
       dbLabel.textContent = 'Audit · Neon';
-      chipDb.className = 'hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-emerald/30 bg-emerald/10 text-emerald text-[11px]';
+      chipDb.className = 'hidden sm:inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full border border-emerald/30 bg-emerald/10 text-emerald text-[11.5px] font-medium whitespace-nowrap';
     } else if (health.database.configured) {
       dbLabel.textContent = 'Audit · database error';
-      chipDb.className = 'hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-crimson/40 bg-crimson/10 text-red-300 text-[11px]';
+      chipDb.className = 'hidden sm:inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full border border-crimson/40 bg-crimson/10 text-red-300 text-[11.5px] font-medium whitespace-nowrap';
     } else {
       dbLabel.textContent = 'Audit · local';
-      chipDb.className = 'hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-line bg-surface text-secondary text-[11px]';
+      chipDb.className = 'hidden sm:inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full border border-line bg-surface/80 text-secondary text-[11.5px] font-medium whitespace-nowrap';
     }
   }
 
@@ -139,44 +145,54 @@
   function renderPipeline(stages, overall) {
     const container = $('pipeline');
     const statusMap = new Map((stages ?? []).map((stage) => [stage.stage, stage]));
-    $('pipeline-status').textContent = overall;
+    const statusEl = $('pipeline-status');
+    statusEl.textContent = overall.toUpperCase();
+    const overallTone = overall === 'Running' ? 'text-emerald border-emerald/40 bg-emerald/10'
+      : overall === 'Error' ? 'text-red-300 border-crimson/40 bg-crimson/10'
+      : /mock|fallback/i.test(overall) ? 'text-amber border-amber/40 bg-amber/10'
+      : /live/i.test(overall) ? 'text-emerald border-emerald/40 bg-emerald/10'
+      : 'text-meta';
+    statusEl.className = `text-[11.5px] font-mono num px-2.5 py-1 rounded-full border bg-obsidian/60 ${overallTone}`;
 
-    container.innerHTML = WORKFLOW_STAGES.map(([stageKey, label], index) => {
+    container.innerHTML = WORKFLOW_STAGES.map(([stageKey, label, icon], index) => {
       const stage = statusMap.get(stageKey);
+      let nodeClass = '';
       let stateClass = 'text-meta';
-      let dotClass = 'bg-neutral-700';
       let badge = '';
 
       if (state.scanning && overall === 'Running') {
-        stateClass = 'stage-active text-emerald';
-        dotClass = 'bg-emerald';
+        nodeClass = 'stage-active';
+        stateClass = 'stage-active text-emerald font-medium';
       }
       if (stage) {
         if (stage.status === 'ok') {
+          nodeClass = 'stage-done';
           stateClass = 'text-secondary';
-          dotClass = 'bg-emerald';
-          badge = `${stage.duration_ms}ms`;
+          badge = stage.duration_ms > 0 ? `${stage.duration_ms}ms` : 'done';
         } else if (stage.status === 'mock') {
+          nodeClass = 'stage-mock';
           stateClass = 'text-amber-300';
-          dotClass = 'bg-amber';
           badge = 'mock';
         } else if (stage.status === 'error') {
+          nodeClass = 'stage-error';
           stateClass = 'text-red-300';
-          dotClass = 'bg-red-400';
           badge = 'skipped';
         }
       }
+      const nextStage = statusMap.get(WORKFLOW_STAGES[index + 1]?.[0]);
+      const linkDone = Boolean(stage && stage.status === 'ok' && nextStage);
       const isLast = index === WORKFLOW_STAGES.length - 1;
       return `
-        <div class="flex items-center ${isLast ? '' : 'flex-1 min-w-[110px]'}" data-stage="${stageKey}">
-          <div class="flex flex-col items-center gap-1.5 ${isLast ? '' : 'w-min'}">
-            <div class="stage-dot size-2 rounded-full ${dotClass}"></div>
-            <div class="text-[11px] whitespace-nowrap ${stateClass}">${label}</div>
-            <div class="text-[11px] whitespace-nowrap text-meta num h-4">${badge}</div>
+        <div class="flex items-start ${isLast ? '' : 'flex-1 min-w-[118px]'} ${nodeClass}" data-stage="${stageKey}">
+          <div class="flex flex-col items-center gap-1.5 shrink-0">
+            <div class="stage-node"><i data-lucide="${icon}" class="size-4"></i></div>
+            <div class="text-[11.5px] whitespace-nowrap ${stateClass}">${label}</div>
+            <div class="text-[10.5px] font-mono whitespace-nowrap text-meta num h-4">${badge}</div>
           </div>
-          ${isLast ? '' : '<div class="h-px flex-1 bg-line mx-2 mb-5"></div>'}
+          ${isLast ? '' : `<div class="stage-link flex-1 mt-[17px] mx-2 min-w-[24px] ${linkDone ? 'stage-link-done' : ''}"></div>`}
         </div>`;
     }).join('');
+    refreshIcons();
   }
 
   /* --------------------------- privacy panel ------------------------- */
@@ -192,28 +208,28 @@
     const chip = $('privacy-mode-chip');
     chip.textContent = `Mode · ${privacy.effective_mode}`;
     if (privacy.effective_mode === 'show') {
-      chip.className = 'text-[11px] px-2 py-1 rounded border border-crimson/50 bg-crimson/10 text-red-300';
+      chip.className = 'text-[11px] font-mono px-2.5 py-1 rounded-full border border-crimson/50 bg-crimson/10 text-red-300';
     } else {
-      chip.className = 'text-[11px] px-2 py-1 rounded border border-emerald/30 bg-emerald/10 text-emerald';
+      chip.className = 'text-[11px] font-mono px-2.5 py-1 rounded-full border border-emerald/30 bg-emerald/10 text-emerald';
     }
 
     $('privacy-count').textContent = privacy.detected_sensitive;
 
     const detections = $('privacy-detections');
     detections.innerHTML = privacy.detections.length === 0
-      ? '<span class="text-[11px] text-meta">No sensitive values detected — tidak ada nilai sensitif terdeteksi</span>'
+      ? '<span class="text-[12px] text-meta">No sensitive values detected — tidak ada nilai sensitif terdeteksi</span>'
       : privacy.detections
           .map(
             (d) => {
               const style = SEVERITY_STYLE[severityOf(d.type)];
-              return `<span class="font-mono text-[11px] px-2 py-1 rounded border ${style.border} ${style.bg} ${style.text}">L${d.line} · ${escapeHtml(d.key_name)} <span class="opacity-70">${escapeHtml(d.type)}</span></span>`;
+              return `<span class="font-mono text-[11.5px] px-2.5 py-1 rounded-md border ${style.border} ${style.bg} ${style.text}">L${d.line} · ${escapeHtml(d.key_name)} <span class="opacity-70">${escapeHtml(d.type)}</span></span>`;
             }
           )
           .join('') +
         (privacy.injection_indicators ?? [])
           .map(
             (inj) =>
-              `<span class="font-mono text-[11px] px-2 py-1 rounded border border-amber/50 bg-amber/10 text-amber-300">L${inj.line} · PROMPT_INJECTION</span>`
+              `<span class="font-mono text-[11.5px] px-2.5 py-1 rounded-md border border-amber/50 bg-amber/10 text-amber-300">L${inj.line} · PROMPT_INJECTION</span>`
           )
           .join('');
 
@@ -232,13 +248,21 @@
 
   function renderPresets(presets) {
     $('preset-row').innerHTML = presets
-      .map(
-        (preset) => `
-        <button data-preset="${preset.id}" class="text-left rounded border border-line bg-raised hover:border-emerald/40 px-3 py-2.5 transition-colors group">
-          <div class="text-[13px] font-medium text-secondary group-hover:text-emerald leading-snug text-pretty">${escapeHtml(preset.label_en)}</div>
-          <div class="font-mono text-[11px] text-meta mt-1 leading-snug">${escapeHtml(preset.filename)}</div>
-        </button>`
-      )
+      .map((preset) => {
+        const meta = SOURCE_TYPE_META[preset.source_type] ?? SOURCE_TYPE_META.snippet;
+        const risky = !/safe/i.test(preset.id);
+        return `
+        <button data-preset="${preset.id}" class="lift group text-left rounded-xl border border-line bg-raised/70 hover:border-emerald/40 hover:bg-raised px-3.5 py-3">
+          <div class="flex items-center justify-between gap-2">
+            <span class="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-meta">
+              <i data-lucide="${meta.icon}" class="size-3"></i>${meta.label}
+            </span>
+            <i data-lucide="${risky ? 'bug' : 'check-circle-2'}" class="size-3.5 ${risky ? 'text-crimson/70' : 'text-emerald/70'}"></i>
+          </div>
+          <div class="text-[13px] font-medium text-secondary group-hover:text-ink leading-snug text-pretty mt-1.5">${escapeHtml(preset.label_en)}</div>
+          <div class="font-mono text-[10.5px] text-meta mt-1 leading-snug truncate">${escapeHtml(preset.filename)}</div>
+        </button>`;
+      })
       .join('');
     $('preset-row').querySelectorAll('[data-preset]').forEach((button) => {
       button.addEventListener('click', () => loadPreset(presets.find((p) => p.id === button.dataset.preset)));
@@ -259,6 +283,7 @@
         const active = button.dataset.preset === preset.id;
         button.classList.toggle('border-emerald/60', active);
         button.classList.toggle('bg-emerald/10', active);
+        button.classList.toggle('shadow-glow-emerald', active);
       });
   }
 
@@ -346,11 +371,14 @@
     renderFindings(result);
     renderRemediation(result);
     refreshIcons();
+    if (window.innerWidth < 1024) {
+      $('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   function renderFindingsHeader(result) {
     const index = result.risk.index;
-    const circumference = 2 * Math.PI * 34;
+    const circumference = 2 * Math.PI * 39;
     const gauge = $('risk-gauge');
     gauge.style.strokeDashoffset = String(circumference * (1 - index / 100));
     const color = SEVERITY_STYLE[result.risk.band === 'critical' ? 'critical' : result.risk.band === 'elevated' ? 'high' : result.risk.band === 'moderate' ? 'medium' : 'none'].raw;
@@ -366,7 +394,7 @@
     const severity = SEVERITY_STYLE[result.analysis.severity] ?? SEVERITY_STYLE.none;
     const severityChip = $('severity-chip');
     severityChip.textContent = `Severity · ${result.analysis.severity}`;
-    severityChip.className = `text-[11px] px-2 py-0.5 rounded border ${severity.border} ${severity.bg} ${severity.text}`;
+    severityChip.className = `text-[11.5px] font-medium px-2.5 py-1 rounded-full border ${severity.border} ${severity.bg} ${severity.text}`;
 
     $('finding-count').textContent = `${result.analysis.detected_vulnerabilities.length} finding(s) · ${result.privacy.detected_sensitive} redacted value(s)`;
 
@@ -376,9 +404,9 @@
     const live = result.ai.status === 'live';
     aiLabel.textContent = live ? 'Live AI analysis' : result.ai.status === 'mock_fallback' ? 'Mock fallback' : result.ai.status;
     aiDot.className = `stage-dot size-1.5 rounded-full ${live ? 'bg-emerald' : 'bg-amber'}`;
-    aiChip.className = `inline-flex items-center gap-1.5 px-2.5 py-1 rounded border ${
+    aiChip.className = `inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full border whitespace-nowrap ${
       live ? 'border-emerald/30 bg-emerald/10 text-emerald' : 'border-amber/40 bg-amber/10 text-amber'
-    } text-[11px]`;
+    } text-[11.5px] font-medium`;
     $('ai-meta').textContent = `${result.ai.model ?? 'local deterministic engine'} · ${result.ai.latency_ms}ms AI · ${result.processing_ms}ms total${live ? '' : ' · not a live AI result'}`;
 
     $('analysis-summary').textContent = result.analysis.summary;
@@ -397,48 +425,55 @@
     const section = $('findings-section');
     if (findings.length === 0) {
       section.innerHTML = `
-        <div class="rounded-lg border border-emerald/30 bg-emerald/5 px-5 py-4 flex items-start gap-3">
-          <i data-lucide="check-circle-2" class="size-5 text-emerald shrink-0 mt-0.5"></i>
-          <div class="text-[13px] text-secondary leading-relaxed">
-            <span class="font-semibold text-emerald">No vulnerabilities found.</span>
+        <div class="rounded-2xl border border-emerald/30 bg-emerald/5 px-6 py-5 flex items-start gap-3.5">
+          <div class="size-9 rounded-lg bg-emerald/10 border border-emerald/25 flex items-center justify-center shrink-0">
+            <i data-lucide="check-circle-2" class="size-4.5 text-emerald"></i>
+          </div>
+          <div class="text-[13.5px] text-secondary leading-relaxed">
+            <span class="font-semibold text-emerald">No vulnerabilities found.</span><br />
             Local scanning found no obvious sensitive values. A clean sample does not prove the application is secure.
           </div>
         </div>`;
       return;
     }
     section.innerHTML = findings
-      .map((finding) => {
+      .map((finding, i) => {
         const style = SEVERITY_STYLE[finding.severity] ?? SEVERITY_STYLE.medium;
         const confidencePct = Math.round((finding.confidence ?? 0) * 100);
         return `
-        <article class="rounded-lg border ${style.border} bg-surface overflow-hidden fade-in">
-          <div class="px-5 py-3 border-b border-line flex items-center gap-2.5 flex-wrap">
-            <span class="size-1.5 rounded-full ${style.dot}"></span>
-            <span class="font-mono text-[11px] ${style.text} num">${escapeHtml(finding.id)} · ${finding.severity}</span>
-            <span class="font-mono text-[11px] px-1.5 py-0.5 rounded bg-raised text-secondary border border-line">${escapeHtml(finding.category)}</span>
-            ${finding.rotation_required ? '<span class="text-[11px] px-1.5 py-0.5 rounded bg-crimson/10 text-red-300 border border-crimson/40">Rotate credential</span>' : ''}
+        <article class="finding-card rounded-2xl border border-line bg-surface shadow-card fade-in" style="--rail:${style.raw}; animation-delay:${i * 60}ms">
+          <div class="px-6 py-3 border-b border-line flex items-center gap-2 flex-wrap bg-white/[0.015]">
+            <span class="inline-flex items-center gap-1.5 font-mono text-[11px] font-medium ${style.text}"><span class="size-1.5 rounded-full ${style.dot}"></span>${escapeHtml(finding.id)}</span>
+            <span class="text-[11px] font-medium px-2 py-0.5 rounded-full border ${style.border} ${style.bg} ${style.text}">${finding.severity}</span>
+            <span class="font-mono text-[10.5px] px-2 py-0.5 rounded-md bg-raised text-secondary border border-line">${escapeHtml(finding.category)}</span>
+            ${finding.rotation_required ? '<span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-crimson/10 text-red-300 border border-crimson/40 inline-flex items-center gap-1"><i data-lucide="key-round" class="size-3"></i>Rotate credential</span>' : ''}
             ${finding.line ? `<span class="font-mono text-[11px] text-meta ml-auto num">line ${finding.line}</span>` : ''}
           </div>
-          <div class="px-5 py-4 space-y-3">
-            <h3 class="text-[14px] font-semibold leading-snug text-pretty">${escapeHtml(finding.title)}</h3>
-            ${finding.description ? `<p class="text-[13px] text-secondary leading-relaxed text-pretty">${escapeHtml(finding.description)}</p>` : ''}
+          <div class="px-6 py-5 space-y-4">
+            <h3 class="text-[15.5px] font-semibold leading-snug text-pretty">${escapeHtml(finding.title)}</h3>
+            ${finding.description ? `<p class="text-[13.5px] text-secondary leading-relaxed text-pretty">${escapeHtml(finding.description)}</p>` : ''}
             ${finding.evidence_excerpt ? `
-            <div>
-              <div class="text-[12px] text-meta mb-1">Redacted evidence</div>
-              <pre class="bg-obsidian border border-line rounded px-3 py-2 font-mono text-[11.5px] leading-relaxed whitespace-pre-wrap break-all text-secondary">${highlightTokens(finding.evidence_excerpt)}</pre>
+            <div class="terminal">
+              <div class="terminal-bar">
+                <i style="background:#EF4444"></i><i style="background:#F59E0B"></i><i style="background:#10B981"></i>
+                <span class="terminal-title">evidence · redacted</span>
+              </div>
+              <pre class="px-3.5 py-3 font-mono text-[11.5px] leading-relaxed whitespace-pre-wrap break-all text-secondary">${highlightTokens(finding.evidence_excerpt)}</pre>
             </div>` : ''}
             ${finding.risk_impact ? `
-            <div class="text-[13px] text-secondary leading-relaxed"><span class="text-[12px] text-meta block mb-0.5">Risk impact</span>${escapeHtml(finding.risk_impact)}</div>` : ''}
-            <div class="flex items-center gap-3">
-              <div class="text-[12px] text-meta">Confidence</div>
-              <div class="flex-1 max-w-[160px] h-1 rounded bg-raised overflow-hidden">
-                <div class="h-full ${style.dot}" style="width:${confidencePct}%"></div>
-              </div>
-              <div class="text-[11px] text-secondary num">${confidencePct}%</div>
+            <div class="flex items-start gap-2.5 text-[13.5px] text-secondary leading-relaxed">
+              <i data-lucide="zap" class="size-3.5 mt-1 shrink-0 ${style.text}"></i>
+              <span><span class="text-[11.5px] font-mono uppercase tracking-wider text-meta block mb-0.5">Risk impact</span>${escapeHtml(finding.risk_impact)}</span>
+            </div>` : ''}
+            <div class="flex items-center gap-3 max-w-sm">
+              <div class="text-[11px] font-mono uppercase tracking-wider text-meta shrink-0">Confidence</div>
+              <div class="meter flex-1"><div style="width:${confidencePct}%; background:${style.raw}"></div></div>
+              <div class="text-[11.5px] font-mono text-secondary num shrink-0">${confidencePct}%</div>
             </div>
             ${finding.remediation ? `
-            <div class="rounded border border-line bg-raised px-3.5 py-2.5 text-[13px] text-ink leading-relaxed text-pretty">
-              <span class="text-[12px] text-meta block mb-1">Recommended remediation</span>${escapeHtml(finding.remediation)}
+            <div class="rounded-xl border border-emerald/25 bg-emerald/[0.06] px-4 py-3 text-[13.5px] text-ink leading-relaxed text-pretty flex items-start gap-2.5">
+              <i data-lucide="wrench" class="size-4 mt-0.5 shrink-0 text-emerald"></i>
+              <span><span class="text-[11.5px] font-mono uppercase tracking-wider text-emerald/80 block mb-0.5">Recommended remediation</span>${escapeHtml(finding.remediation)}</span>
             </div>` : ''}
           </div>
         </article>`;
@@ -457,16 +492,21 @@
       copyButton.classList.add('inline-flex');
       copyButton.dataset.diff = diff;
       $('diff-view').classList.remove('hidden');
-      $('diff-view').innerHTML = diff
-        .split('\n')
-        .map((line) => {
-          const escaped = escapeHtml(line) || '&nbsp;';
-          if (line.startsWith('+') && !line.startsWith('+++')) return `<div class="diff-add px-1">${escaped}</div>`;
-          if (line.startsWith('-') && !line.startsWith('---')) return `<div class="diff-del px-1">${escaped}</div>`;
-          if (line.startsWith('@@')) return `<div class="diff-hunk px-1">${escaped}</div>`;
-          return `<div class="px-1 text-secondary">${escaped}</div>`;
-        })
-        .join('');
+      $('diff-view').innerHTML = `
+        <div class="terminal-bar sticky top-0 z-10">
+          <i style="background:#EF4444"></i><i style="background:#F59E0B"></i><i style="background:#10B981"></i>
+          <span class="terminal-title">remediation.patch · proposal only</span>
+        </div>` +
+        diff
+          .split('\n')
+          .map((line) => {
+            const escaped = escapeHtml(line) || '&nbsp;';
+            if (line.startsWith('+') && !line.startsWith('+++')) return `<div class="diff-row diff-add"><span class="diff-sign">+</span><span class="diff-code">${escaped}</span></div>`;
+            if (line.startsWith('-') && !line.startsWith('---')) return `<div class="diff-row diff-del"><span class="diff-sign">−</span><span class="diff-code">${escaped}</span></div>`;
+            if (line.startsWith('@@')) return `<div class="diff-row diff-hunk"><span class="diff-sign">@</span><span class="diff-code">${escaped}</span></div>`;
+            return `<div class="diff-row"><span class="diff-sign">&nbsp;</span><span class="diff-code text-secondary">${escaped}</span></div>`;
+          })
+          .join('');
       $('remediation-empty').textContent = '';
     } else {
       copyButton.classList.add('hidden');
@@ -521,14 +561,20 @@
             .map((record) => {
               const style = SEVERITY_STYLE[record.severity] ?? SEVERITY_STYLE.none;
               return `
-              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-line bg-raised px-3.5 py-2.5 text-[12px]">
-                <span class="font-mono text-secondary">${escapeHtml(String(record.scan_id))}</span>
-                <span class="text-meta num">${escapeHtml(new Date(record.created_at).toLocaleString())}</span>
-                <span class="font-mono text-secondary">${escapeHtml(record.filename || 'untitled')}</span>
-                <span class="px-1.5 py-0.5 rounded border ${style.border} ${style.bg} ${style.text}">${record.severity}</span>
-                <span class="text-meta num">risk ${record.risk_index}</span>
-                <span class="text-meta num">${record.findings_count} finding(s)</span>
-                <span class="ml-auto ${record.analysis_mode === 'live' ? 'text-emerald' : 'text-amber'}">${record.analysis_mode === 'live' ? 'Live' : 'Mock fallback'}</span>
+              <div class="grid grid-cols-2 sm:grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1.5 rounded-xl border border-line bg-raised/60 hover:bg-raised px-4 py-3 text-[12.5px] transition-colors">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="font-mono text-secondary truncate">${escapeHtml(String(record.scan_id))}</span>
+                  <span class="font-mono text-meta hidden md:inline truncate">${escapeHtml(record.filename || 'untitled')}</span>
+                </div>
+                <div class="flex items-center gap-2.5 justify-end flex-wrap">
+                  <span class="px-2 py-0.5 rounded-full border text-[11px] font-medium ${style.border} ${style.bg} ${style.text}">${record.severity}</span>
+                  <span class="text-meta num">risk ${record.risk_index}</span>
+                  <span class="text-meta num hidden sm:inline">${record.findings_count} finding(s)</span>
+                  <span class="inline-flex items-center gap-1 ${record.analysis_mode === 'live' ? 'text-emerald' : 'text-amber'}">
+                    <span class="size-1.5 rounded-full ${record.analysis_mode === 'live' ? 'bg-emerald' : 'bg-amber'}"></span>${record.analysis_mode === 'live' ? 'Live' : 'Mock fallback'}
+                  </span>
+                  <span class="text-meta num hidden lg:inline">${escapeHtml(new Date(record.created_at).toLocaleString())}</span>
+                </div>
               </div>`;
             })
             .join('');
@@ -588,6 +634,12 @@
     });
     $('scan-btn').addEventListener('click', runScan);
     $('copy-patch').addEventListener('click', copyPatch);
+    document.addEventListener('keydown', (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        runScan();
+      }
+    });
     $('empty-run-demo').addEventListener('click', () => {
       if (state.presets.length > 0) loadPreset(state.presets[0]);
       runScan();
