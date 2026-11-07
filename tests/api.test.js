@@ -11,9 +11,9 @@ import { createApp } from '../lib/app.js';
 process.env.DEMO_MODE = 'true';
 process.env.SENSITIVE_DATA = 'redact';
 process.env.ALLOW_SENSITIVE_DATA_TO_AI = 'false';
-delete process.env.WORKBUDDY_BASE_URL;
-delete process.env.WORKBUDDY_API_KEY;
-delete process.env.WORKBUDDY_MODEL;
+delete process.env.SUMOPOD_BASE_URL;
+delete process.env.SUMOPOD_API_KEY;
+delete process.env.SUMOPOD_MODEL;
 delete process.env.DATABASE_URL;
 
 let server;

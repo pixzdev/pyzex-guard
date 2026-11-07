@@ -16,14 +16,17 @@
           colors: {
             obsidian: '#0A0A0A',
             surface: '#141414',
-            raised: '#1A1A1A',
+            raised: '#1B1B1B',
             line: 'rgba(255,255,255,0.08)',
+            control: '#3A3A3A',
             emerald: { DEFAULT: '#10B981', dim: '#0B7A58' },
             crimson: { DEFAULT: '#EF4444', dim: '#7F1D1D' },
             amber: { DEFAULT: '#F59E0B', dim: '#78350F' },
             orange: { DEFAULT: '#F97316' },
             ink: '#F5F5F5',
-            mute: '#8B8B8B',
+            secondary: '#B4B4B4',
+            meta: '#949494',
+            mute: '#949494',
           },
           fontFamily: {
             sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
@@ -42,14 +45,9 @@
     ::-webkit-scrollbar-thumb { background: #262626; border-radius: 5px; border: 2px solid #0A0A0A; }
     ::-webkit-scrollbar-thumb:hover { background: #333; }
     :focus-visible { outline: 2px solid #10B981; outline-offset: 2px; border-radius: 2px; }
+    .num { font-variant-numeric: tabular-nums; }
 
-    .grid-bg {
-      background-image:
-        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-      background-size: 44px 44px;
-    }
-    .stage-dot { transition: background-color .2s ease, box-shadow .2s ease, border-color .2s ease; }
+    .stage-dot { transition: background-color .2s ease, box-shadow .2s ease; }
     .stage-active .stage-dot { animation: pulseDot 1.2s ease-in-out infinite; }
     @keyframes pulseDot {
       0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.35); }
@@ -70,8 +68,8 @@
     .tok-hide { color: #F59E0B; background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.3); }
     .diff-add { background: rgba(16,185,129,0.09); color: #A7F3D0; }
     .diff-del { background: rgba(239,68,68,0.09); color: #FECACA; }
-    .diff-hunk { background: rgba(255,255,255,0.04); color: #8B8B8B; }
-    .fade-in { animation: fadeIn .3s ease both; }
+    .diff-hunk { background: rgba(255,255,255,0.04); color: #949494; }
+    .fade-in { animation: fadeIn .25s ease-out both; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
     textarea { tab-size: 2; }
     @media (prefers-reduced-motion: reduce) {
@@ -83,29 +81,29 @@
 <body class="bg-obsidian text-ink font-sans antialiased min-h-screen flex flex-col">
 
   <!-- ============================ HEADER ============================ -->
-  <header class="sticky top-0 z-40 border-b border-line bg-obsidian/95 backdrop-blur-sm">
+  <header class="sticky top-0 z-40 border-b border-line bg-obsidian">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-      <div class="flex items-center gap-3 min-w-0">
-        <div class="w-9 h-9 rounded-md border border-emerald/30 bg-emerald/10 flex items-center justify-center shrink-0">
-          <i data-lucide="shield" class="w-5 h-5 text-emerald"></i>
+      <div class="flex items-center gap-3">
+        <div class="size-9 rounded-md border border-emerald/30 bg-emerald/10 flex items-center justify-center shrink-0">
+          <i data-lucide="shield" class="size-5 text-emerald"></i>
         </div>
-        <div class="min-w-0">
-          <div class="font-mono font-bold tracking-widest text-sm sm:text-base leading-tight truncate">PYZEX GUARD</div>
-          <div class="font-mono text-[10px] tracking-[0.2em] text-mute leading-tight">PIXZ.DEV · SECURITY OPERATIONS</div>
+        <div>
+          <div class="font-mono font-bold tracking-widest text-[13px] leading-tight whitespace-nowrap">PYZEX GUARD</div>
+          <div class="text-[11px] text-meta leading-tight whitespace-nowrap">PIXZ.DEV · Security operations</div>
         </div>
       </div>
-      <div class="flex items-center gap-2 font-mono text-[10px] sm:text-[11px] flex-wrap justify-end">
-        <span id="chip-ai" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-line bg-surface text-mute">
-          <span class="stage-dot w-1.5 h-1.5 rounded-full bg-mute inline-block"></span><span data-chip-label>AI PROVIDER</span>
+      <div class="flex items-center gap-2 flex-wrap justify-end">
+        <span id="chip-ai" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-line bg-surface text-secondary text-[11px]">
+          <span class="stage-dot size-1.5 rounded-full bg-meta inline-block"></span><span data-chip-label>AI · sumopod · demo/mock</span>
         </span>
-        <span id="chip-privacy" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-emerald/30 bg-emerald/10 text-emerald">
-          <i data-lucide="lock" class="w-3 h-3"></i><span data-chip-label>PRIVACY: REDACT</span>
+        <span id="chip-privacy" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-emerald/30 bg-emerald/10 text-emerald text-[11px]">
+          <i data-lucide="lock" class="size-3"></i><span data-chip-label>Privacy · redact</span>
         </span>
-        <span id="chip-demo" class="hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-amber/40 bg-amber/10 text-amber">
-          <i data-lucide="flask-conical" class="w-3 h-3"></i>DEMO MODE
+        <span id="chip-demo" class="hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-amber/40 bg-amber/10 text-amber text-[11px]">
+          <i data-lucide="flask-conical" class="size-3"></i>Demo mode
         </span>
-        <span id="chip-db" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-line bg-surface text-mute">
-          <i data-lucide="database" class="w-3 h-3"></i><span data-chip-label>AUDIT: LOCAL</span>
+        <span id="chip-db" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-line bg-surface text-secondary text-[11px]">
+          <i data-lucide="database" class="size-3"></i><span data-chip-label>Audit · local</span>
         </span>
       </div>
     </div>
@@ -113,26 +111,24 @@
 
   <!-- Show-mode warning (rendered only when effective_mode === 'show') -->
   <div id="show-banner" class="hidden border-b border-crimson/30 bg-crimson/10">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-3 font-mono text-[11px] text-red-300">
-      <i data-lucide="alert-octagon" class="w-4 h-4 shrink-0"></i>
-      <span id="show-banner-text">SHOW MODE ACTIVE — original sensitive values will be sent to the configured AI provider.</span>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-3 text-[12px] text-red-300">
+      <i data-lucide="alert-octagon" class="size-4 shrink-0"></i>
+      <span id="show-banner-text">SHOW mode is active — original sensitive values will be sent to the configured AI provider.</span>
     </div>
   </div>
 
   <main class="flex-1 w-full">
 
     <!-- ============================ HERO ============================ -->
-    <section class="grid-bg border-b border-line">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-        <h1 class="font-semibold text-2xl sm:text-4xl tracking-tight max-w-3xl text-balance">
-          Catch the leak. Understand the risk. <span class="text-emerald">Fix it before it ships.</span>
-        </h1>
-        <p class="mt-2 text-mute text-sm sm:text-base">Deteksi kebocoran. Pahami risikonya. Cegah sebelum terlanjur.</p>
-        <p class="mt-4 max-w-3xl text-sm sm:text-[15px] leading-relaxed text-neutral-300">
-          A privacy-first SecOps Office Agent. Secrets are detected and redacted
-          <span class="text-ink font-medium">locally</span> — before any AI triage — then findings, a deterministic risk
-          index and a remediation draft are produced for <span class="text-ink font-medium">human approval</span>.
-          <span class="text-mute">The agent never applies changes automatically.</span>
+    <section class="border-b border-line">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-9 sm:py-11">
+        <h1 class="text-[22px] sm:text-2xl font-semibold tracking-tight text-balance">Pyzex Guard — privacy-first SecOps Office Agent</h1>
+        <p class="mt-2 text-lg sm:text-xl font-medium text-ink text-balance">Catch the leak. Understand the risk. Fix it before it ships.</p>
+        <p class="mt-1 text-sm text-secondary">Deteksi kebocoran. Pahami risikonya. Cegah sebelum terlanjur.</p>
+        <p class="mt-3 max-w-3xl text-sm leading-relaxed text-secondary text-pretty">
+          Secrets are detected and redacted <span class="text-ink">locally</span> — before any AI triage — then findings, a
+          deterministic risk index and a remediation draft are produced for <span class="text-ink">human approval</span>.
+          The agent never applies changes automatically.
         </p>
       </div>
     </section>
@@ -141,8 +137,8 @@
     <section class="border-b border-line bg-surface/40" aria-label="Agent workflow">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4">
         <div class="flex items-center justify-between mb-3">
-          <div class="font-mono text-[10px] tracking-[0.2em] text-mute">AGENT WORKFLOW / ALUR KERJA AGENT</div>
-          <div id="pipeline-status" class="font-mono text-[10px] tracking-wider text-mute">IDLE</div>
+          <h2 class="text-[13px] font-semibold text-ink">Agent workflow <span class="text-[12px] font-normal text-meta">/ Alur kerja agent</span></h2>
+          <div id="pipeline-status" class="text-[11px] text-meta num">IDLE</div>
         </div>
         <div id="pipeline" class="flex items-start gap-0 overflow-x-auto pb-1"></div>
       </div>
@@ -157,72 +153,72 @@
         <!-- Scan workspace -->
         <section class="rounded-lg border border-line bg-surface" aria-labelledby="workspace-title">
           <div class="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
-            <h2 id="workspace-title" class="font-mono text-[11px] tracking-[0.18em] text-neutral-300">SECURITY SCAN <span class="text-mute">/ PEMINDAIAN KEAMANAN</span></h2>
-            <div id="source-type" class="flex rounded border border-line overflow-hidden font-mono text-[10px]" role="group" aria-label="Source type">
-              <button data-st="snippet"  class="px-2.5 py-1.5 bg-raised text-ink">SNIPPET</button>
-              <button data-st="git_diff" class="px-2.5 py-1.5 text-mute hover:text-ink border-x border-line">GIT DIFF</button>
-              <button data-st="config"   class="px-2.5 py-1.5 text-mute hover:text-ink">CONFIG</button>
+            <h2 id="workspace-title" class="text-[13px] font-semibold text-ink">Security scan <span class="text-[12px] font-normal text-meta">/ Pemindaian keamanan</span></h2>
+            <div id="source-type" class="flex rounded border border-line overflow-hidden text-[11px]" role="group" aria-label="Source type">
+              <button data-st="snippet"  class="px-2.5 py-1.5 bg-raised text-ink">Snippet</button>
+              <button data-st="git_diff" class="px-2.5 py-1.5 text-secondary hover:text-ink border-x border-line">Git diff</button>
+              <button data-st="config"   class="px-2.5 py-1.5 text-secondary hover:text-ink">Config</button>
             </div>
           </div>
 
           <div class="p-5 space-y-4">
             <div>
-              <label for="filename" class="block font-mono text-[10px] tracking-[0.18em] text-mute mb-1.5">FILENAME / NAMA FILE</label>
+              <label for="filename" class="block text-[12px] text-secondary mb-1.5">Filename <span class="text-meta">/ Nama file</span></label>
               <input id="filename" type="text" spellcheck="false" autocomplete="off"
-                class="w-full bg-obsidian border border-line rounded px-3 py-2 font-mono text-sm text-ink placeholder:text-neutral-600 focus:border-emerald/50"
+                class="w-full bg-obsidian border border-control rounded px-3 py-2 font-mono text-[13px] text-ink placeholder:text-meta focus:border-emerald/60"
                 placeholder="config.production.env" />
             </div>
 
             <div>
-              <div class="font-mono text-[10px] tracking-[0.18em] text-mute mb-1.5">DEMO PRESETS <span class="normal-case tracking-normal">(all values synthetic &amp; non-functional)</span></div>
+              <div class="text-[12px] text-secondary mb-1.5">Demo presets <span class="text-meta">— all values synthetic and non-functional</span></div>
               <div id="preset-row" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
             </div>
 
             <div>
-              <label for="content" class="block font-mono text-[10px] tracking-[0.18em] text-mute mb-1.5">SOURCE MATERIAL / KODE, DIFF, ATAU KONFIGURASI</label>
+              <label for="content" class="block text-[12px] text-secondary mb-1.5">Source material <span class="text-meta">/ Kode, diff, atau konfigurasi</span></label>
               <textarea id="content" rows="12" spellcheck="false"
-                class="w-full bg-obsidian border border-line rounded px-3 py-3 font-mono text-[13px] leading-relaxed text-ink placeholder:text-neutral-600 focus:border-emerald/50 resize-y"
+                class="w-full bg-obsidian border border-control rounded px-3 py-3 font-mono text-[13px] leading-relaxed text-ink placeholder:text-meta focus:border-emerald/60 resize-y"
                 placeholder="Paste code, a git diff, or configuration here…"></textarea>
-              <div class="mt-1.5 flex items-center justify-between font-mono text-[10px] text-mute">
-                <span><span id="char-count">0</span> / 65,536 chars</span>
-                <span class="inline-flex items-center gap-1"><i data-lucide="shield-check" class="w-3 h-3 text-emerald"></i>redaction runs locally before any AI call</span>
+              <div class="mt-1.5 flex items-center justify-between text-[11px] text-meta">
+                <span class="num"><span id="char-count">0</span> / 65,536 chars</span>
+                <span class="inline-flex items-center gap-1"><i data-lucide="shield-check" class="size-3 text-emerald"></i>Redaction runs locally before any AI call</span>
               </div>
             </div>
 
             <div id="scan-error" class="hidden rounded border border-crimson/40 bg-crimson/10 px-3.5 py-3 text-[13px] text-red-300 flex items-start gap-2.5">
-              <i data-lucide="alert-triangle" class="w-4 h-4 mt-0.5 shrink-0"></i>
-              <div><div id="scan-error-title" class="font-mono text-[11px] tracking-wider text-red-200 mb-0.5">ERROR</div><div id="scan-error-msg"></div></div>
+              <i data-lucide="alert-triangle" class="size-4 mt-0.5 shrink-0"></i>
+              <div><div id="scan-error-title" class="text-[11px] text-red-200 mb-0.5">ERROR</div><div id="scan-error-msg"></div></div>
             </div>
 
-            <button id="scan-btn" class="w-full h-11 rounded bg-emerald hover:bg-emerald/90 disabled:opacity-50 disabled:cursor-not-allowed text-obsidian font-mono font-bold text-[12px] tracking-[0.18em] transition-colors flex items-center justify-center gap-2">
-              <span id="scan-spinner" class="hidden inline-flex"><i data-lucide="loader-2" class="w-4 h-4 spin"></i></span>
-              <span id="scan-play" class="inline-flex"><i data-lucide="play" class="w-4 h-4"></i></span>
-              <span id="scan-btn-label">TRIGGER AGENT TRIAGE</span>
+            <button id="scan-btn" class="w-full h-11 rounded bg-emerald hover:bg-emerald/90 disabled:opacity-50 disabled:cursor-not-allowed text-obsidian font-mono font-bold text-[12px] transition-colors flex items-center justify-center gap-2">
+              <span id="scan-spinner" class="hidden inline-flex"><i data-lucide="loader-2" class="size-4 spin"></i></span>
+              <span id="scan-play" class="inline-flex"><i data-lucide="play" class="size-4"></i></span>
+              <span id="scan-btn-label">Trigger agent triage</span>
             </button>
-            <div class="text-center font-mono text-[10px] text-mute">Perlu tinjauan manusia — agent tidak pernah menerapkan perubahan otomatis.</div>
+            <div class="text-center text-[11px] text-meta">Perlu tinjauan manusia — agent tidak pernah menerapkan perubahan otomatis.</div>
           </div>
         </section>
 
         <!-- Privacy preview -->
         <section class="rounded-lg border border-line bg-surface" aria-labelledby="privacy-title">
           <div class="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
-            <h2 id="privacy-title" class="font-mono text-[11px] tracking-[0.18em] text-neutral-300">PRIVACY PREVIEW <span class="text-mute">/ PRATINJAU PRIVASI</span></h2>
-            <span id="privacy-mode-chip" class="font-mono text-[10px] px-2 py-1 rounded border border-emerald/30 bg-emerald/10 text-emerald tracking-wider">MODE: REDACT</span>
+            <h2 id="privacy-title" class="text-[13px] font-semibold text-ink">Privacy preview <span class="text-[12px] font-normal text-meta">/ Pratinjau privasi</span></h2>
+            <span id="privacy-mode-chip" class="text-[11px] px-2 py-1 rounded border border-emerald/30 bg-emerald/10 text-emerald">Mode · redact</span>
           </div>
           <div class="p-5 space-y-4">
             <div class="flex items-center gap-2.5 text-[13px]">
-              <i data-lucide="eye-off" class="w-4 h-4 text-emerald shrink-0"></i>
-              <span><span id="privacy-count" class="font-mono font-bold text-ink">0</span> sensitive values detected / <span class="text-mute">nilai sensitif terdeteksi</span></span>
+              <i data-lucide="eye-off" class="size-4 text-emerald shrink-0"></i>
+              <span><span id="privacy-count" class="font-mono font-semibold text-ink num">0</span> sensitive values detected <span class="text-meta">/ nilai sensitif terdeteksi</span></span>
             </div>
             <div id="privacy-detections" class="flex flex-wrap gap-1.5"></div>
             <div id="privacy-warning" class="hidden rounded border border-amber/40 bg-amber/10 px-3 py-2.5 text-[12px] text-amber-200 flex items-start gap-2">
-              <i data-lucide="alert-triangle" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i><span id="privacy-warning-text"></span>
+              <i data-lucide="alert-triangle" class="size-3.5 mt-0.5 shrink-0"></i><span id="privacy-warning-text"></span>
             </div>
             <div>
-              <div class="font-mono text-[10px] tracking-[0.18em] text-mute mb-1.5 flex items-center gap-1.5">
-                <i data-lucide="arrow-up-right" class="w-3 h-3"></i>SANITIZED PAYLOAD SENT TO AI
+              <div class="text-[12px] text-secondary mb-1.5 flex items-center gap-1.5">
+                <i data-lucide="arrow-up-right" class="size-3"></i>Sanitized payload sent to AI
               </div>
-              <pre id="sanitized-preview" class="max-h-56 overflow-auto bg-obsidian border border-line rounded p-3 font-mono text-[11.5px] leading-relaxed text-neutral-300 whitespace-pre-wrap break-all"><span class="text-neutral-600">Load a preset or start typing — the sanitized payload updates live.</span></pre>
+              <pre id="sanitized-preview" class="max-h-56 overflow-auto bg-obsidian border border-line rounded p-3 font-mono text-[11.5px] leading-relaxed text-secondary whitespace-pre-wrap break-all"><span class="text-meta">Load a preset or start typing — the sanitized payload updates live.</span></pre>
             </div>
           </div>
         </section>
@@ -231,17 +227,41 @@
       <!-- RIGHT COLUMN -->
       <div class="lg:col-span-7 space-y-6">
 
-        <!-- Empty state -->
-        <section id="results-empty" class="rounded-lg border border-dashed border-line bg-surface/50 px-6 py-14 text-center">
-          <div class="w-12 h-12 rounded-md border border-line bg-surface mx-auto flex items-center justify-center mb-4">
-            <i data-lucide="scan-line" class="w-6 h-6 text-mute"></i>
+        <!-- Loading skeleton (structural, no shimmer) -->
+        <section id="results-loading" class="hidden rounded-lg border border-line bg-surface px-5 py-5" aria-hidden="true">
+          <div class="flex items-center gap-5">
+            <div class="size-[84px] rounded-full border-[7px] border-raised"></div>
+            <div class="flex-1 space-y-2.5">
+              <div class="h-5 w-40 rounded bg-raised"></div>
+              <div class="h-3 w-64 rounded bg-raised"></div>
+              <div class="h-3 w-52 rounded bg-raised"></div>
+            </div>
           </div>
-          <div class="font-mono text-[11px] tracking-[0.18em] text-neutral-300 mb-2">NO ACTIVE TRIAGE</div>
-          <p class="text-[13px] text-mute max-w-md mx-auto leading-relaxed">
-            Load a demo preset and trigger the agent. Findings, the deterministic risk index and a remediation
-            proposal will appear here — every patch requires human review.<br />
-            <span class="text-neutral-500">Muat preset demo dan jalankan agent. Hasil analisis akan muncul di sini.</span>
+          <div class="mt-5 space-y-2.5">
+            <div class="h-4 w-3/4 rounded bg-raised"></div>
+            <div class="h-3 w-full rounded bg-raised"></div>
+            <div class="h-3 w-5/6 rounded bg-raised"></div>
+          </div>
+          <div class="mt-5 rounded border border-line px-5 py-4 space-y-2.5">
+            <div class="h-4 w-1/2 rounded bg-raised"></div>
+            <div class="h-3 w-2/3 rounded bg-raised"></div>
+          </div>
+          <p class="mt-4 text-[11px] text-meta">Agent workflow running — stages and timings appear when the response lands.</p>
+        </section>
+
+        <!-- Empty state -->
+        <section id="results-empty" class="rounded-lg border border-dashed border-control bg-surface/50 px-6 py-12 text-center">
+          <div class="size-12 rounded-md border border-line bg-surface mx-auto flex items-center justify-center mb-4">
+            <i data-lucide="scan-line" class="size-6 text-meta"></i>
+          </div>
+          <h2 class="text-[15px] font-semibold text-ink text-balance">No active triage</h2>
+          <p class="mt-2 text-[13px] text-secondary max-w-md mx-auto leading-relaxed text-pretty">
+            Run a scan to see findings, the deterministic risk index and a remediation proposal here — every patch requires human review.
           </p>
+          <button id="empty-run-demo" class="mt-4 inline-flex items-center gap-1.5 h-9 px-4 rounded bg-emerald hover:bg-emerald/90 text-obsidian font-mono font-bold text-[11px] transition-colors">
+            <i data-lucide="play" class="size-3.5"></i>Run the demo preset
+          </button>
+          <p class="mt-3 text-[11px] text-meta">Muat preset demo dan jalankan agent. Hasil analisis akan muncul di sini.</p>
         </section>
 
         <!-- Results -->
@@ -251,40 +271,39 @@
           <section class="rounded-lg border border-line bg-surface">
             <div class="px-5 py-5 flex flex-col sm:flex-row sm:items-center gap-5">
               <div class="flex items-center gap-4 shrink-0">
-                <div class="relative w-[84px] h-[84px]">
-                  <svg viewBox="0 0 84 84" class="w-[84px] h-[84px] -rotate-90">
+                <div class="relative size-[84px]">
+                  <svg viewBox="0 0 84 84" class="size-[84px] -rotate-90">
                     <circle cx="42" cy="42" r="34" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="7" />
                     <circle id="risk-gauge" cx="42" cy="42" r="34" fill="none" stroke="#10B981" stroke-width="7"
                       stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="213.6" class="gauge-arc" />
                   </svg>
-                  <div class="absolute inset-0 flex flex-col items-center justify-center">
-                    <span id="risk-index-num" class="font-mono font-bold text-xl leading-none">–</span>
-                    <span class="font-mono text-[8px] tracking-[0.15em] text-mute mt-0.5">RISK INDEX</span>
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span id="risk-index-num" class="font-mono font-bold text-2xl leading-none num">–</span>
                   </div>
                 </div>
                 <div>
-                  <div class="font-mono text-[10px] tracking-[0.18em] text-mute mb-1.5">RISK INDEX / INDEKS RISIKO</div>
-                  <div class="flex flex-wrap items-center gap-1.5">
-                    <span id="risk-band-chip" class="font-mono text-[10px] px-2 py-0.5 rounded border border-line bg-raised text-mute">–</span>
-                    <span id="severity-chip" class="font-mono text-[10px] px-2 py-0.5 rounded border border-line bg-raised text-mute">–</span>
+                  <h2 class="text-[13px] font-semibold text-ink">Risk index <span class="text-[12px] font-normal text-meta">/ Indeks risiko</span></h2>
+                  <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
+                    <span id="risk-band-chip" class="text-[11px] px-2 py-0.5 rounded border border-line bg-raised text-secondary">–</span>
+                    <span id="severity-chip" class="text-[11px] px-2 py-0.5 rounded border border-line bg-raised text-secondary">–</span>
                   </div>
-                  <div id="finding-count" class="mt-1.5 text-[12px] text-mute">– findings</div>
+                  <div id="finding-count" class="mt-1.5 text-[12px] text-secondary num">– findings</div>
                 </div>
               </div>
-              <div class="sm:ml-auto sm:text-right font-mono text-[10px] space-y-1.5">
+              <div class="sm:ml-auto sm:text-right text-[11px] space-y-1.5">
                 <div>
-                  <span id="ai-status-chip" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-line bg-raised text-mute tracking-wider">
-                    <span class="stage-dot w-1.5 h-1.5 rounded-full bg-mute"></span><span id="ai-status-label">–</span>
+                  <span id="ai-status-chip" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-line bg-raised text-secondary">
+                    <span class="stage-dot size-1.5 rounded-full bg-meta"></span><span id="ai-status-label">–</span>
                   </span>
                 </div>
-                <div id="ai-meta" class="text-mute">–</div>
-                <div class="text-neutral-500 max-w-xs sm:ml-auto">Application-defined triage indicator — not an industry-standard rating.</div>
+                <div id="ai-meta" class="text-meta num">–</div>
+                <div class="text-meta max-w-xs sm:ml-auto">Application-defined triage indicator — not an industry-standard rating.</div>
               </div>
             </div>
             <div class="px-5 pb-5 space-y-3">
-              <p id="analysis-summary" class="text-[14px] leading-relaxed text-neutral-200"></p>
-              <p id="risk-analysis" class="text-[13px] leading-relaxed text-mute"></p>
-              <div id="compliance-note" class="rounded border border-line bg-raised px-3.5 py-2.5 font-mono text-[10.5px] text-mute"></div>
+              <p id="analysis-summary" class="text-[14px] leading-relaxed text-ink text-pretty"></p>
+              <p id="risk-analysis" class="text-[13px] leading-relaxed text-secondary text-pretty"></p>
+              <div id="compliance-note" class="rounded border border-line bg-raised px-3.5 py-2.5 text-[12px] text-secondary"></div>
             </div>
           </section>
 
@@ -293,26 +312,25 @@
 
           <!-- Approval banner -->
           <section class="rounded-lg border border-amber/40 bg-amber/10 px-5 py-4 flex items-start gap-3">
-            <i data-lucide="user-check" class="w-5 h-5 text-amber shrink-0 mt-0.5"></i>
+            <i data-lucide="user-check" class="size-5 text-amber shrink-0 mt-0.5"></i>
             <div class="text-[13px] leading-relaxed">
-              <div class="font-mono text-[11px] tracking-[0.18em] text-amber mb-1">HUMAN APPROVAL REQUIRED / PERLU TINJAUAN MANUSIA</div>
-              <p class="text-amber-100/90">Patches are proposals only. Pyzex Guard never commits, pushes, deploys, or applies changes. A human owner reviews and applies every change.
-              <span class="text-amber-200/70">Tinjau dan terapkan setiap perubahan secara manual.</span></p>
+              <h2 class="text-[13px] font-semibold text-amber">Human approval required <span class="font-normal text-amber-200/80">/ Perlu tinjauan manusia</span></h2>
+              <p class="mt-1 text-amber-100/90 text-pretty">Patches are proposals only. Pyzex Guard never commits, pushes, deploys, or applies changes. A human owner reviews and applies every change.</p>
             </div>
           </section>
 
           <!-- Remediation -->
           <section class="rounded-lg border border-line bg-surface">
             <div class="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
-              <h2 class="font-mono text-[11px] tracking-[0.18em] text-neutral-300">REMEDIATION PROPOSAL <span class="text-mute">/ USULAN PERBAIKAN</span></h2>
-              <button id="copy-patch" class="hidden items-center gap-1.5 font-mono text-[10px] tracking-wider px-2.5 py-1.5 rounded border border-emerald/40 bg-emerald/10 text-emerald hover:bg-emerald/20 transition-colors">
-                <i data-lucide="copy" class="w-3 h-3"></i><span data-label>COPY PATCH</span>
+              <h2 class="text-[13px] font-semibold text-ink">Remediation proposal <span class="text-[12px] font-normal text-meta">/ Usulan perbaikan</span></h2>
+              <button id="copy-patch" class="hidden items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded border border-emerald/40 bg-emerald/10 text-emerald hover:bg-emerald/20 transition-colors">
+                <i data-lucide="copy" class="size-3"></i><span data-label>Copy patch</span>
               </button>
             </div>
             <div class="p-5">
-              <div id="remediation-status" class="font-mono text-[10.5px] text-mute mb-3"></div>
+              <div id="remediation-status" class="text-[12px] text-secondary mb-3 num"></div>
               <pre id="diff-view" class="hidden max-h-96 overflow-auto bg-obsidian border border-line rounded p-3 font-mono text-[11.5px] leading-relaxed whitespace-pre"></pre>
-              <div id="remediation-empty" class="text-[13px] text-mute leading-relaxed"></div>
+              <div id="remediation-empty" class="text-[13px] text-secondary leading-relaxed"></div>
             </div>
           </section>
         </div>
@@ -323,8 +341,8 @@
     <section class="max-w-7xl mx-auto px-4 sm:px-6 pb-10">
       <div class="rounded-lg border border-line bg-surface">
         <div class="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
-          <h2 class="font-mono text-[11px] tracking-[0.18em] text-neutral-300">AUDIT HISTORY <span class="text-mute">/ RIWAYAT AUDIT</span></h2>
-          <span id="history-status" class="font-mono text-[10px] text-mute tracking-wider">–</span>
+          <h2 class="text-[13px] font-semibold text-ink">Audit history <span class="text-[12px] font-normal text-meta">/ Riwayat audit</span></h2>
+          <span id="history-status" class="text-[11px] text-meta">–</span>
         </div>
         <div class="p-5">
           <div id="history-list" class="space-y-2"></div>
@@ -335,8 +353,8 @@
 
   <!-- ============================ FOOTER ============================ -->
   <footer class="border-t border-line">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 font-mono text-[10px] tracking-wider text-mute">
-      <div>PIXZ.DEV · PYZEX GUARD — Muhammad Rafif Rianto</div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-meta">
+      <div>PIXZ.DEV · Pyzex Guard — Muhammad Rafif Rianto</div>
       <div class="text-center">Tencent Cloud AI CAN DO IT Hackathon Indonesia 2026 · Challenge B — The Office Agent</div>
       <div>Security triage aid — not a compliance certification.</div>
     </div>

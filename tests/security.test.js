@@ -12,15 +12,16 @@ const { runSecurityPipeline, RequestValidationError } = await import('../lib/pip
 const { ProviderError } = await import('../lib/ai-provider.js');
 const { createAuditStore } = await import('../lib/audit-store.js');
 const { createApp } = await import('../lib/app.js');
+const { getProviderConfig, PROVIDER_PROFILES } = await import('../lib/config.js');
 
 // File-level process env for API-level tests in this file: live provider
 // pointing at an instantly-refused local port (no DNS, no real network).
 process.env.DEMO_MODE = 'false';
 process.env.SENSITIVE_DATA = 'redact';
 process.env.ALLOW_SENSITIVE_DATA_TO_AI = 'false';
-process.env.WORKBUDDY_BASE_URL = 'http://127.0.0.1:9/v1';
-process.env.WORKBUDDY_API_KEY = 'sk-sentinel-PROVIDER-KEY-000000000000000';
-process.env.WORKBUDDY_MODEL = 'glm-5.3-flash';
+process.env.SUMOPOD_BASE_URL = 'http://127.0.0.1:9/v1';
+process.env.SUMOPOD_API_KEY = 'sk-sentinel-PROVIDER-KEY-000000000000000';
+process.env.SUMOPOD_MODEL = 'glm-5.3-flash';
 delete process.env.DATABASE_URL;
 
 const SENTINEL_CLOUD = 'AKIDsentinelNOTREALvalue0000000000001';
@@ -38,9 +39,9 @@ function baseEnv(overrides = {}) {
     SENSITIVE_DATA: 'redact',
     ALLOW_SENSITIVE_DATA_TO_AI: 'false',
     DEMO_MODE: 'true',
-    WORKBUDDY_BASE_URL: '',
-    WORKBUDDY_API_KEY: '',
-    WORKBUDDY_MODEL: '',
+    SUMOPOD_BASE_URL: '',
+    SUMOPOD_API_KEY: '',
+    SUMOPOD_MODEL: '',
     DATABASE_URL: '',
     ...overrides,
   };
@@ -311,7 +312,7 @@ describe('audit records & logging hygiene', () => {
 
       // A provider error that (maliciously or accidentally) embeds the key.
       const failingPipeline = async () => {
-        throw new Error(`auth exploded for key ${process.env.WORKBUDDY_API_KEY} at endpoint`);
+        throw new Error(`auth exploded for key ${process.env.SUMOPOD_API_KEY} at endpoint`);
       };
       try {
         await runSecurityPipeline(
@@ -324,7 +325,7 @@ describe('audit records & logging hygiene', () => {
         assert.fail('should have thrown');
       } catch (err) {
         assert.equal(err instanceof ProviderError, true);
-        assert.ok(!String(err.message).includes(process.env.WORKBUDDY_API_KEY), 'typed provider errors carry no key material');
+        assert.ok(!String(err.message).includes(process.env.SUMOPOD_API_KEY), 'typed provider errors carry no key material');
       }
 
       // API-level: failing provider endpoint (instantly refused) must 503 and not log the key.
@@ -335,13 +336,13 @@ describe('audit records & logging hygiene', () => {
       });
       assert.equal(response.status, 503);
       const body = await response.json();
-      assert.ok(!JSON.stringify(body).includes(process.env.WORKBUDDY_API_KEY));
+      assert.ok(!JSON.stringify(body).includes(process.env.SUMOPOD_API_KEY));
     } finally {
       console.log = originalLog;
       await new Promise((resolve) => (server ? server.close(resolve) : resolve()));
     }
     const everything = logLines.join('\n');
-    assert.ok(!everything.includes(process.env.WORKBUDDY_API_KEY), 'API key must never appear in application logs');
+    assert.ok(!everything.includes(process.env.SUMOPOD_API_KEY), 'API key must never appear in application logs');
     assert.ok(!everything.includes(RAW_CONTENT), 'request bodies must never appear in logs');
   });
 
@@ -359,6 +360,46 @@ describe('audit records & logging hygiene', () => {
     assert.ok(!serialized.includes(SENTINEL_JWT));
     assert.ok(!serialized.includes(RAW_CONTENT));
     assert.equal(result.persistence.persisted, true);
+  });
+});
+
+describe('provider registry (Tencent ecosystem readiness)', () => {
+  test('auto selection picks the first fully configured profile', () => {
+    const cfg = getProviderConfig(baseEnv({ DEMO_MODE: 'true' }));
+    assert.equal(cfg.profile, 'sumopod', 'unconfigured profiles fall back to the sponsor default slot');
+    assert.equal(cfg.configured, false);
+
+    const cfg2 = getProviderConfig(
+      baseEnv({ SUMOPOD_BASE_URL: '', SUMOPOD_API_KEY: '', SUMOPOD_MODEL: '' })
+    );
+    assert.equal(cfg2.profile, 'sumopod');
+
+    const cfg3 = getProviderConfig(
+      baseEnv({ SUMOPOD_API_KEY: '', TENCENT_BASE_URL: 'https://tencent.example/v1', TENCENT_API_KEY: 'k', TENCENT_MODEL: 'm' })
+    );
+    assert.equal(cfg3.profile, 'tencent', 'auto picks tencent when sumopod is incomplete but tencent is configured');
+    assert.equal(cfg3.configured, true);
+  });
+
+  test('AI_PROVIDER pins a specific profile', () => {
+    const cfg = getProviderConfig(
+      baseEnv({ AI_PROVIDER: 'tencent', TENCENT_BASE_URL: 'https://tencent.example/v1', TENCENT_API_KEY: 'k', TENCENT_MODEL: 'm' })
+    );
+    assert.equal(cfg.profile, 'tencent');
+    assert.equal(cfg.requested, 'tencent');
+
+    const cfg2 = getProviderConfig(baseEnv({ AI_PROVIDER: 'custom', CUSTOM_BASE_URL: 'https://x/v1', CUSTOM_API_KEY: 'k', CUSTOM_MODEL: 'm' }));
+    assert.equal(cfg2.profile, 'custom');
+
+    // Unknown AI_PROVIDER values fall back to the full auto ordering.
+    const cfg3 = getProviderConfig(baseEnv({ AI_PROVIDER: 'banana' }));
+    assert.equal(cfg3.profile, 'sumopod');
+  });
+
+  test('registry exposes all three ecosystem profiles', () => {
+    for (const id of ['sumopod', 'tencent', 'custom']) {
+      assert.ok(PROVIDER_PROFILES[id], `profile ${id} exists`);
+    }
   });
 });
 
@@ -394,9 +435,9 @@ describe('failure containment', () => {
 
       // (b) No provider configured at all → PROVIDER_NOT_CONFIGURED (503).
       const saved = { ...process.env };
-      delete process.env.WORKBUDDY_BASE_URL;
-      delete process.env.WORKBUDDY_API_KEY;
-      delete process.env.WORKBUDDY_MODEL;
+      delete process.env.SUMOPOD_BASE_URL;
+      delete process.env.SUMOPOD_API_KEY;
+      delete process.env.SUMOPOD_MODEL;
       try {
         const response2 = await fetch(`${url}/api/scan`, {
           method: 'POST',
@@ -407,9 +448,9 @@ describe('failure containment', () => {
         const body2 = await response2.json();
         assert.equal(body2.error.code, 'PROVIDER_NOT_CONFIGURED');
       } finally {
-        process.env.WORKBUDDY_BASE_URL = saved.WORKBUDDY_BASE_URL;
-        process.env.WORKBUDDY_API_KEY = saved.WORKBUDDY_API_KEY;
-        process.env.WORKBUDDY_MODEL = saved.WORKBUDDY_MODEL;
+        process.env.SUMOPOD_BASE_URL = saved.SUMOPOD_BASE_URL;
+        process.env.SUMOPOD_API_KEY = saved.SUMOPOD_API_KEY;
+        process.env.SUMOPOD_MODEL = saved.SUMOPOD_MODEL;
       }
 
       // Server remains responsive afterwards.

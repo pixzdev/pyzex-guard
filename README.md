@@ -120,8 +120,9 @@ timed and displayed in the dashboard.
                       |
              Sanitized Payload    (typed placeholders only — raw values never leave)
                       |
-          Tencent / WorkBuddy-
-           Compatible AI Route    (lib/ai-provider.js — OpenAI-compatible adapter)
+        Tencent ecosystem AI route (multi-provider registry —
+        SumoPod default; Tencent Cloud / custom via config)
+                            (lib/ai-provider.js — OpenAI-compatible adapter)
                       |
                 GLM Engine        (sponsor endpoint: SumoPod-hosted, model glm-5.3-flash)
                       |
@@ -253,16 +254,28 @@ included in audit records — and model output is still leak-scrubbed.
 ## 11. AI Provider Integration
 
 - **Adapter**: `lib/ai-provider.js` — the only provider-aware module. Works
-  with any OpenAI-compatible Chat Completions endpoint.
-- **Sponsor default**: the SumoPod-hosted GLM deployment.
-  - Base URL: `https://ai.sumopod.com/v1` (verified reachable; returns
-    standard OpenAI-style auth errors)
-  - Model ID: `glm-5.3-flash` (exact provider-catalog ID, passed via config —
-    never hardcoded in application logic)
-- **Attribution accuracy**: the backend calls the **OpenAI-compatible
-  inference endpoint** (`/v1/chat/completions`). No proprietary WorkBuddy API
-  is called. `WORKBUDDY_*` environment variable names follow the hackathon
-  brief's configuration convention; their values point at the actual provider.
+  with any OpenAI-compatible Chat Completions endpoint through a small
+  **provider registry** (`lib/config.js`).
+- **Provider profiles** (selected with `AI_PROVIDER`, default `auto` = first
+  fully configured profile wins):
+
+  | Profile | Env vars | Status |
+  | --- | --- | --- |
+  | `sumopod` — SumoPod sponsor endpoint | `SUMOPOD_BASE_URL` / `SUMOPOD_API_KEY` / `SUMOPOD_MODEL` | **Verified**: endpoint reachable, OpenAI-compatible auth errors; model `glm-5.3-flash` |
+  | `tencent` — Tencent Cloud OpenAI-compatible inference (e.g. TI-ONE endpoint or a Hunyuan OpenAI-compatible gateway) | `TENCENT_BASE_URL` / `TENCENT_API_KEY` / `TENCENT_MODEL` | **Supported via configuration** — same adapter, same privacy pipeline; unverified pending credentials |
+  | `custom` — any other OpenAI-compatible endpoint | `CUSTOM_BASE_URL` / `CUSTOM_API_KEY` / `CUSTOM_MODEL` | Supported via configuration |
+
+- **Tencent ecosystem honesty**: the backend calls one thing — an
+  OpenAI-compatible inference endpoint (`/v1/chat/completions`). No proprietary
+  Tencent SDK and no proprietary WorkBuddy API is called or required. The
+  `tencent` profile is a configuration surface for any Tencent-hosted
+  OpenAI-compatible inference deployment; pointing it at a real endpoint is a
+  credentials change, not a code change. Deeper ecosystem touchpoints
+  (COS audit export, Tencent Cloud deployment targets) are documented as
+  future work — none are claimed as implemented.
+- **Sponsor default values** (from `.env.example`): base URL
+  `https://ai.sumopod.com/v1`, model ID `glm-5.3-flash` — the exact
+  provider-catalog ID, never hardcoded in application logic.
 - **Reliability**: 30 s request timeout, 1 network retry, JSON-mode requests,
   robust JSON extraction (fences/prose/repair), **one** controlled corrective
   retry for schema violations, classified errors
@@ -272,9 +285,9 @@ included in audit records — and model output is still leak-scrubbed.
 
 **Live-status honesty**: as of this submission, inference calls from the
 deployed demo run in **DEMO/MOCK FALLBACK** mode because no provider API key
-was embedded in the repository (by design). Once `WORKBUDDY_API_KEY` is set in
-the environment, the same code path performs live GLM triage — no code changes
-required.
+was embedded in the repository (by design). Once `SUMOPOD_API_KEY` (or a
+`TENCENT_*` / `CUSTOM_*` set) is configured in the environment, the same code
+path performs live GLM triage — no code changes required.
 
 ## 12. Neon Database Architecture
 
@@ -294,7 +307,7 @@ required.
 git clone <your-repo-url> pyzex-guard
 cd pyzex-guard
 npm install
-cp .env.example .env   # fill in WORKBUDDY_API_KEY to enable live AI
+cp .env.example .env   # fill in SUMOPOD_API_KEY to enable live AI
 ```
 
 Requirements: Node.js ≥ 20. No database is required to run the demo; Neon is
@@ -315,9 +328,12 @@ all preset credentials are synthetic and non-functional.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `WORKBUDDY_BASE_URL` | *(empty — `.env.example` suggests the SumoPod endpoint)* | OpenAI-compatible base URL |
-| `WORKBUDDY_API_KEY` | *(empty)* | Provider API key (`sk-…`). Never commit. |
-| `WORKBUDDY_MODEL` | *(empty — e.g. `glm-5.3-flash`)* | Exact model ID from the provider catalog |
+| `AI_PROVIDER` | `auto` | `sumopod` \| `tencent` \| `custom` \| `auto` (first configured profile wins) |
+| `SUMOPOD_BASE_URL` | `https://ai.sumopod.com/v1` | Sponsor endpoint (OpenAI-compatible) |
+| `SUMOPOD_API_KEY` | *(empty)* | SumoPod API key (`sk-…`). Never commit. |
+| `SUMOPOD_MODEL` | `glm-5.3-flash` | Exact model ID from the provider catalog |
+| `TENCENT_BASE_URL` / `TENCENT_API_KEY` / `TENCENT_MODEL` | *(empty)* | Tencent Cloud OpenAI-compatible inference profile (e.g. TI-ONE / Hunyuan gateway) |
+| `CUSTOM_BASE_URL` / `CUSTOM_API_KEY` / `CUSTOM_MODEL` | *(empty)* | Any other OpenAI-compatible endpoint |
 | `SENSITIVE_DATA` | `redact` | `hide` \| `redact` \| `show` |
 | `ALLOW_SENSITIVE_DATA_TO_AI` | `false` | Second condition for `show` mode |
 | `DEMO_MODE` | `true` | Labeled MOCK FALLBACK when provider fails/unconfigured |
@@ -329,8 +345,8 @@ all preset credentials are synthetic and non-functional.
 1. Push this repository to GitHub.
 2. In Vercel: **Add New → Project → Import** the repository (framework: Other).
 3. Set environment variables (Project → Settings → Environment Variables):
-   `WORKBUDDY_BASE_URL`, `WORKBUDDY_API_KEY`, `WORKBUDDY_MODEL`,
-   `SENSITIVE_DATA=redact`, `ALLOW_SENSITIVE_DATA_TO_AI=false`,
+   `SUMOPOD_API_KEY` (+ optionally `SUMOPOD_BASE_URL`, `SUMOPOD_MODEL`,
+   `AI_PROVIDER`), `SENSITIVE_DATA=redact`, `ALLOW_SENSITIVE_DATA_TO_AI=false`,
    `DEMO_MODE=true`, and optionally `DATABASE_URL` (Neon).
 4. Apply the schema once: run the SQL in `db/schema.sql` in the Neon console.
 5. Deploy. `vercel.json` routes `/api/*` to the serverless function
